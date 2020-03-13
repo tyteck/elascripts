@@ -11,8 +11,13 @@ class ElasticWrapper
     protected $elacticSearchClient;
     /** @var string $indexToUse the index to use */
     protected $indexToUse;
-    /** @var array elastic hosts */
+    /** @var array $hosts elastic hosts */
     protected $hosts = [];
+    /** @var array $results */
+    protected $results = [];
+    /** @var array $queryParams query passed to ES server */
+    protected $queryParams;
+
 
     private function __construct()
     {
@@ -52,41 +57,83 @@ class ElasticWrapper
         return false;
     }
 
+    public function indexUsed()
+    {
+        return $this->indexToUse;
+    }
+
     public function documents()
     {
         if ($this->indexToUse === null) {
             throw new \RuntimeException("Set index to use before usinf search");
         }
+        $this->setParams($verb = 'match_all');
 
-        $params = [
-            'index' => $this->indexToUse,
-            'body'  => [
-                'query' => [
-                    'match_all' => [
-                        'boost' => 1.0,
-                    ]
-                ]
-            ]
-        ];
-        return collect($this->elacticSearchClient->search($params));
+        $this->results = collect($this->elacticSearchClient->search($this->params()));
+
+        return $this;
     }
 
     public function search(string $needle, string $haystack)
     {
         if ($this->indexToUse === null) {
-            throw new \RuntimeException("Set index to use before usinf search");
+            throw new \RuntimeException("Set index to use before using search");
         }
 
-        $params = [
+        $this->setParams($verb = 'match', $attributes = [$haystack => $needle]);
+
+        $this->results = collect($this->elacticSearchClient->search($this->params()));
+
+        return $this;
+    }
+
+    protected function setParams(string $verb, array $attributes = ['boost' => 1.0])
+    {
+        $this->queryParams = [
             'index' => $this->indexToUse,
             'body'  => [
+                'size' => 500,
                 'query' => [
-                    'match' => [
-                        'title' => 'cgr'
-                    ]
+                    $verb => $attributes
                 ]
             ]
         ];
-        return collect($this->elacticSearchClient->search($params));
+    }
+
+    protected function params()
+    {
+        return $this->queryParams;
+    }
+
+    protected function query()
+    {
+        return $this->queryParams["body"]["query"];
+    }
+
+    public function nbDocuments(): int
+    {
+        if (empty($this->results)) {
+            return null;
+        }
+        return $this->results['hits']['total']['value'];
+    }
+
+    public function column(string $columnName)
+    {
+        $results = array_map(function ($item) use ($columnName) {
+            return $item['_source'][$columnName];
+        }, $this->results['hits']['hits']);
+        return $results;
+    }
+
+    public function lastQuery(): string
+    {
+        $result = "";
+        foreach ($this->query() as $verb => $queryItem) {
+            foreach ($queryItem as $key => $value) {
+                $result .= "$verb -- $key = $value" . PHP_EOL;
+            }
+        }
+        return $result;
     }
 }
