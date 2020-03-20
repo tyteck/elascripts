@@ -32,9 +32,17 @@ class ElasticWrapper
 
     protected function setHosts(): void
     {
-        $this->hosts = [
-            getenv('ELASTIC_HOST') . ':' . getenv('ELASTIC_PORT')
+        $host = [
+            'host' => getenv('ELASTIC_HOST'),
+            'port' => getenv('ELASTIC_PORT'),
         ];
+        if (getenv('ELASTIC_USER') !== null) {
+            $host['user'] = getenv('ELASTIC_USER');
+        }
+        if (getenv('ELASTIC_PASS') !== null) {
+            $host['pass'] = getenv('ELASTIC_PASS');
+        }
+        $this->hosts = [$host];
     }
 
     public function hosts(): array
