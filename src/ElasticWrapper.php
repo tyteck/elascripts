@@ -56,10 +56,24 @@ class ElasticWrapper
         return collect($this->elacticSearchClient->cat()->indices(array('index' => '*')));
     }
 
-    public function setIndexToUse(string $indexName): bool
+    public function setIndexToUse(string $indexToUse): bool
     {
-        if ($this->indexes()->pluck('index')->contains($indexName)) {
-            $this->indexToUse = $indexName;
+        $result = array_filter(
+            array_map(function ($item) {
+                return $item['index'];
+            }, $this->indexes()->toArray()),
+            function ($item) use ($indexToUse) {
+                var_dump($item, $indexToUse);
+                if ($item == $indexToUse) {
+                    echo "chatt";
+                    return true;
+                }
+                return false;
+            }
+        );
+        
+        if (count($result)) {
+            $this->indexToUse = $indexToUse;
             return true;
         }
         return false;
