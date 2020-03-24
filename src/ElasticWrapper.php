@@ -63,9 +63,7 @@ class ElasticWrapper
                 return $item['index'];
             }, $this->indexes()->toArray()),
             function ($item) use ($indexToUse) {
-                var_dump($item, $indexToUse);
                 if ($item == $indexToUse) {
-                    echo "chatt";
                     return true;
                 }
                 return false;

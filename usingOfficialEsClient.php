@@ -35,6 +35,8 @@ if ($indexes->count() == 1) {
     }
 
     $indexName = $indexes->values()[$selectedOne - 1]['index'];
+
+    $esWrapperObj->setIndexToUse($indexName);
 }
 
 echo "=================================" . PHP_EOL;
