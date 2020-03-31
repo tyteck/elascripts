@@ -1,0 +1,64 @@
+#!/usr/bin/php
+<?php
+
+require 'vendor/autoload.php';
+
+use elascripts\UserDialog;
+use elascripts\ElasticWrapper;
+
+$userDialogObject = UserDialog::create();
+
+try {
+    $indexes = ($esWrapperObj = ElasticWrapper::create())->indexes();
+
+    // no index => leave
+    if ($indexes->count() <= 0) {
+        $userDialogObject->error("There is no indexes on this server.");
+        exit(1);
+    }
+
+    if ($indexes->count() == 1) {
+        // only one index use it
+        $esWrapperObj->setIndexToUse($indexes->first()['index']);
+    } else {
+        //ask user
+        $userDialogObject->separator("Available indexes :");
+        $i = 1;
+        foreach ($indexes->pluck('index') as $index) {
+            echo "$i -- $index : " . PHP_EOL;
+            $i++;
+        }
+        $selectedOne = readline("Select the index to use [1-" . $indexes->count() . "] : ");
+
+        if (!is_numeric($selectedOne)) {
+            die("You should type a number.");
+        }
+
+        if (!(1 <= $selectedOne && $selectedOne <= $indexes->count())) {
+            die("You should type a number between 1 and " . $indexes->count() . ".");
+        }
+
+        $indexName = $indexes->values()[$selectedOne - 1]['index'];
+
+        $esWrapperObj->setIndexToUse($indexName);
+    }
+
+    $userDialogObject->separator("Index used : " . $esWrapperObj->indexUsed())
+        ->line("There are actually {" . $esWrapperObj->documents()->nbDocuments() . "} in index " . $esWrapperObj->indexUsed())
+        ->separator()
+        ->simpleQuestion("What are you looking for", UserDialog::_EXPECTED_STRING);
+
+    $nbDocuments = $esWrapperObj->search($userDialogObject->answer())->nbDocuments();
+    if ($nbDocuments > 0) {
+        echo PHP_EOL . "Nb results : " . $nbDocuments . PHP_EOL;
+        echo "Results : " . PHP_EOL;
+        foreach ($esWrapperObj->column('title') as $searchResult) {
+            echo "-- $searchResult" . PHP_EOL;
+        }
+    } else {
+        echo "There is no document matching {" . $userDialogObject->answer() . "}";
+    }
+} catch (\Exception $exception) {
+    $userDialogObject->error($exception->getMessage());
+    exit(1);
+}

@@ -51,9 +51,18 @@ class ElasticWrapper
     }
 
     /** this one is returning all the available indexes in elasticSearchHost */
-    public function indexes(): Collection
+    public function indexes(bool $withoutSystemIndexes = true): Collection
     {
-        return collect($this->elacticSearchClient->cat()->indices(array('index' => '*')));
+        $indexes = $this->elacticSearchClient->cat()->indices(array('index' => '*'));
+        if ($withoutSystemIndexes) {
+            $indexes = array_filter($indexes, function ($index) {
+                if (substr($index['index'], 0, 1) == '.') {
+                    return false;
+                }
+                return true;
+            });
+        }
+        return collect($indexes);
     }
 
     public function setIndexToUse(string $indexToUse): bool
@@ -69,7 +78,7 @@ class ElasticWrapper
                 return false;
             }
         );
-        
+
         if (count($result)) {
             $this->indexToUse = $indexToUse;
             return true;
@@ -94,7 +103,7 @@ class ElasticWrapper
         return $this;
     }
 
-    public function search(string $needle, string $haystack)
+    public function search(string $needle, string $haystack = 'title')
     {
         if ($this->indexToUse === null) {
             throw new \RuntimeException("Set index to use before using search");
@@ -155,5 +164,10 @@ class ElasticWrapper
             }
         }
         return $result;
+    }
+
+    public function getResults()
+    {
+        return $this->results;
     }
 }
