@@ -1,0 +1,32 @@
+#!/usr/bin/php
+<?php
+
+use elascripts\AskUserIndexToUse;
+use elascripts\UserDialog;
+use elascripts\ElasticWrapper;
+
+require 'vendor/autoload.php';
+
+$userDialogObject = UserDialog::create();
+$guessed = ($esWrapperObj = ElasticWrapper::create($noNeedOfSystemIndices = true))
+    ->guessIndexToUse();
+
+if (!$guessed) {
+    $selectedIndex = AskUserIndexToUse::init($esWrapperObj)->ask();
+    $esWrapperObj->setIndexToUse($selectedIndex);
+}
+
+$userDialogObject->separator("Index used : " . $esWrapperObj->index())
+    ->line("There are actually {" . $esWrapperObj->matchAll()->nbResults() . "} in index " . $esWrapperObj->index())
+    ->separator()
+    ->simpleQuestion("What are you looking for", UserDialog::_EXPECTED_STRING);
+
+$nbDocuments = $esWrapperObj->match($userDialogObject->answer(), 'title')->nbResults();
+if ($nbDocuments > 0) {
+    $userDialogObject->line("Results ($nbDocuments) : ")
+        ->unorderedList(
+            $esWrapperObj->getResults(['id', 'title'])
+        );
+} else {
+    $userDialogObject->warning("There is no document matching {" . $userDialogObject->answer() . "}");
+}

@@ -10,11 +10,16 @@
 		"psr-4": {
 			"elascripts\\": "src"
         },
-        "files": ["bootstrap.php"]
+        "files": [
+            "bootstrap.php"
+        ]
 	},
     "require": {
         "illuminate/support": "^7.1",
         "elasticsearch/elasticsearch": "^7.6",
         "vlucas/phpdotenv": "^4.1"
+    },
+    "require-dev": {
+        "nunomaduro/collision": "^4.1"
     }
 }
