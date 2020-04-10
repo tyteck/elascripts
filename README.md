@@ -1,7 +1,7 @@
 # Elascripts
 
 ## Introduction
-This is a set of little script that allow user to ask some question to one elasticsearch server.
+This is a set of scripts that allow user to get informations from elasticsearch server.
 
 This work as a cli command (no gui).
 
