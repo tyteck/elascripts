@@ -17,5 +17,5 @@ if (!$guessed) {
 }
 
 $userDialogObject->separator("Index used : " . $esWrapperObj->index())
-    ->line("There are actually {" . $esWrapperObj->matchAll()->nbResults() . "} in index " . $esWrapperObj->index());
+    ->line("There are actually {" . $esWrapperObj->matchAll()->nbResults() . "} documents in index " . $esWrapperObj->index());
     
