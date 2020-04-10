@@ -1,0 +1,21 @@
+#!/usr/bin/env php
+<?php
+
+use elascripts\AskUserIndexToUse;
+use elascripts\UserDialog;
+use elascripts\ElasticWrapper;
+
+require 'vendor/autoload.php';
+
+$userDialogObject = UserDialog::create();
+$guessed = ($esWrapperObj = ElasticWrapper::create($noNeedOfSystemIndices = true))
+    ->guessIndexToUse();
+
+if (!$guessed) {
+    $selectedIndex = AskUserIndexToUse::init($esWrapperObj)->ask();
+    $esWrapperObj->setIndexToUse($selectedIndex);
+}
+
+$userDialogObject->separator("Index used : " . $esWrapperObj->index())
+    ->line("There are actually {" . $esWrapperObj->matchAll()->nbResults() . "} in index " . $esWrapperObj->index());
+    
